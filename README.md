@@ -8,3 +8,4 @@ Difference with `yireyun/go-queue`:
 * Put/Get does not run `runtime.Gosched()` if Queue is full/empty, but let the user decide what to do.
 * Put/Get does not return `false` if `CAS` fail, but will retry after `runtime.Gosched()` until success.
 * Make it faster for a little bit by eliminating [false sharing](https://en.wikipedia.org/wiki/False_sharing).
+* Add dropping queue with NewDroppingQueue (flush first element when put, if full)

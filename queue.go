@@ -6,13 +6,14 @@ import (
 )
 
 type Queue struct {
-	capacityMod    uint32
-	capacity       uint32
-	getPos uint32
-    _1 [64]byte
-    putPos uint32
-    // _2 [64]byte
-	entries        []queueEntry
+	capacityMod uint32
+	capacity    uint32
+	getPos      uint32
+	_1          [64]byte
+	putPos      uint32
+	// _2 [64]byte
+	entries  []queueEntry
+	dropFull bool
 }
 
 type queueEntry struct {
@@ -39,6 +40,13 @@ func NewQueue(capacity int) *Queue {
 	return q
 }
 
+func NewDroppingQueue(capacity int) *Queue {
+	q := NewQueue(capacity)
+	q.dropFull = true
+
+	return q
+}
+
 func (q *Queue) Put(elem interface{}) (ok bool) {
 	capacityMod := q.capacityMod
 
@@ -54,7 +62,12 @@ retry:
 	}
 
 	if cnt >= capacityMod {
-		return false
+		if q.dropFull {
+			q.Get()
+			goto retry
+		} else {
+			return false
+		}
 	}
 
 	if !atomic.CompareAndSwapUint32(&q.putPos, putPos, putPos+1) {
@@ -125,6 +138,10 @@ func (q *Queue) Size() int {
 		cnt = (putPos - getPos) + q.capacityMod
 	}
 	return int(cnt)
+}
+
+func (q *Queue) Capacity() int {
+	return int(q.capacityMod)
 }
 
 func minQuantity(v uint32) uint32 {
